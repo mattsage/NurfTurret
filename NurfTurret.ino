@@ -25,8 +25,8 @@ void setup()
 
 void loop()
 {
-    //delay(1000);  
-    //digitalWrite(LED_BUILTIN, HIGH);       // Light LED
+    delay(1000);  
+    digitalWrite(LED_BUILTIN, HIGH);       // Light LED
     val = digitalRead(pirInputPin);          // read input value
     if ((val == HIGH)&&(pirState == LOW)) {  // check if the input is HIGH and currently we are LOW - check if PIR detected motion, and check that its not still the previous loop motion so we wouldn't ask the servo to move again to the same location
     // we have just turned on
