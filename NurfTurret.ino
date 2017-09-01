@@ -13,7 +13,7 @@ int servoOutputPin = 7;         // choose the output pin for the servo
 int pirInputPin = 2;            // choose the input pin (for PIR sensor)
 int val = 0;                    // variable for reading the pin status
 int pirState = LOW;             // we start, assuming no motion detected
-int delayTime = 2000;           // variable to set delay time
+int delayTime = 20000000;           // variable to set delay time
 
 void setup()
 {
