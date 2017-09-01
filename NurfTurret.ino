@@ -17,6 +17,7 @@ int delayTime = 2000;           // variable to set delay time
 
 void setup()
 {
+  //pinMode(LED_BUILTIN, OUTPUT);
   myservo.attach(servoOutputPin);  // attaches the servo on servoOutputPin to the servo object
   pinMode(pirInputPin, INPUT);     // declare sensor as input
   Serial.begin(9600);              // Sets the data rate in bits per second (baud) for serial data transmission
@@ -24,8 +25,10 @@ void setup()
 
 void loop()
 {
-  val = digitalRead(pirInputPin);          // read input value
-  if ((val == HIGH)&&(pirState == LOW)) {  // check if the input is HIGH and currently we are LOW - check if PIR detected motion, and check that its not still the previous loop motion so we wouldn't ask the servo to move again to the same location
+    //delay(delayTime);  
+    //digitalWrite(LED_BUILTIN, HIGH);       // Light LED
+    val = digitalRead(pirInputPin);          // read input value
+    if ((val == HIGH)&&(pirState == LOW)) {  // check if the input is HIGH and currently we are LOW - check if PIR detected motion, and check that its not still the previous loop motion so we wouldn't ask the servo to move again to the same location
     // we have just turned on
     Serial.println("Motion detected!");    // print test
     pirState = HIGH;                       // motion detected, so pirState currently set to high - the servo is in the "motion detected" state
