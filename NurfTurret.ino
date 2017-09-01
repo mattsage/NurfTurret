@@ -17,7 +17,7 @@ int delayTime = 2000;           // variable to set delay time
 
 void setup()
 {
-  //pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
   myservo.attach(servoOutputPin);  // attaches the servo on servoOutputPin to the servo object
   pinMode(pirInputPin, INPUT);     // declare sensor as input
   Serial.begin(9600);              // Sets the data rate in bits per second (baud) for serial data transmission
