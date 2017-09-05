@@ -1,46 +1,109 @@
-/* Basic_PIR_Servo
-  by romand
-  based upon: http://www.instructables.com/id/Arduino-PIR-Motion-Sensor
-  and Sweep example from http://www.arduino.cc/en/Tutorial/sweep
-*/
+/* 
+http://www.instructables.com/id/Motion-Activated-Servo/
+**/
 
 #include <Servo.h>
 
-Servo myservo;                  // create servo object to control a servo
-int posMotion = 80;             // variable to store the servo position when movement detected
-int posNoMotion = 120;          // variable to store the servo position when movement stoped
-int servoOutputPin = 7;         // choose the output pin for the servo
-int pirInputPin = 2;            // choose the input pin (for PIR sensor)
-int val = 0;                    // variable for reading the pin status
-int pirState = LOW;             // we start, assuming no motion detected
-int delayTime = 90000;           // variable to set delay time
+Servo myservo;  //creates a servo object
+                         //a maximum of eight servo objects can be created
 
-void setup()
-{
-  pinMode(LED_BUILTIN, OUTPUT);
-  myservo.attach(servoOutputPin);  // attaches the servo on servoOutputPin to the servo object
-  pinMode(pirInputPin, INPUT);     // declare sensor as input
-  Serial.begin(9600);              // Sets the data rate in bits per second (baud) for serial data transmission
+int pos = 0;        //variable to store servo position
+
+//amount of time we give the sensor to calibrate(10-60 secs according to the datasheet)
+
+int calibrationTime = 30;
+
+//the time when the sensor outputs a low impulse
+long unsigned int lowIn;        
+
+//the amount of milliseconds the sensor has to be low
+//before we assume all motion has stopped
+long unsigned int pause = 5000; 
+
+boolean lockLow = true;
+boolean takeLowTime; 
+
+int pirPin = 12;            //digital pin connected to the PIR's output
+int pirPos = 13;           //connects to the PIR's 5V pin
+
+void setup(){
+  myservo.attach(4);    //attaches servo to pin 4
+  Serial.begin(9600);    //begins serial communication
+  pinMode(pirPin, INPUT);
+  pinMode(pirPos, OUTPUT);
+  digitalWrite(pirPos, HIGH);
+
+  //give the sensor time to calibrate
+  Serial.println("calibrating sensor ");
+  for(int i = 0; i < calibrationTime; i++){
+    Serial.print(calibrationTime - i);
+    Serial.print("-");
+    delay(1000);
+  }
+  Serial.println();
+  Serial.println("done");
+ 
+  //while making this Instructable, I had some issues with the PIR's output
+  //going HIGH immediately after calibrating
+  //this waits until the PIR's output is low before ending setup
+  while (digitalRead(pirPin) == HIGH) {
+    delay(500);
+    Serial.print(".");     
+  }
+  Serial.print("SENSOR ACTIVE");
 }
 
-void loop()
-{
-    delay(1000);  
-    digitalWrite(LED_BUILTIN, HIGH);       // Light LED
-    val = digitalRead(pirInputPin);          // read input value
-    if ((val == HIGH)&&(pirState == LOW)) {  // check if the input is HIGH and currently we are LOW - check if PIR detected motion, and check that its not still the previous loop motion so we wouldn't ask the servo to move again to the same location
-    // we have just turned on
-    Serial.println("Motion detected!");    // print test
-    pirState = HIGH;                       // motion detected, so pirState currently set to high - the servo is in the "motion detected" state
-    myservo.write(posMotion);              // tell servo to go to position in variable 'posMotion'
-    delay(delayTime);                      // waits delayTime for until we are ready for the next motion signal (should also consider the time screw on the PIR sensor itself)
+void loop(){
+
+  if(digitalRead(pirPin) == HIGH){  //if the PIR output is HIGH, turn servo
+
+    /*turns servo from 0 to 180 degrees and back
+    it does this by increasing the variable "pos" by 1 every 5 milliseconds until it hits 180
+    and setting the servo's position in degrees to "pos" every 5 milliseconds
+    it then does it in reverse to have it go back
+    to learn more about this, google "for loops"
+    to change the amount of degrees the servo turns, change the number 180 to the number of degrees you want it to turn
+    **/
+    for(pos = 0; pos < 180; pos += 1)  //goes from 0 to 180 degrees
+    {                                                 //in steps of one degree
+      myservo.write(pos);                   //tells servo to go to position in variable "pos"
+      delay(5);                                   //waits for the servo to reach the position
+    }
+    for(pos = 180; pos>=1; pos-=1)    //goes from 180 to 0 degrees
+    {                               
+      myservo.write(pos);                  //to make the servo go faster, decrease the time in delays for
+      delay(5);                                  //to make it go slower, increase the number.
+    }
+   
+    if(lockLow){ 
+      //makes sure we wait for a transition to LOW before further output is made
+      lockLow = false;           
+      Serial.println("---");
+      Serial.print("motion detected at ");
+      Serial.print(millis()/1000);
+      Serial.println(" sec");
+      delay(50);
+    }        
+    takeLowTime = true;
   }
-  else if(pirState == HIGH){               // anyway when servo is in posMotion state, and delayTime is passed, enter this else-if
-    // we have just turned off
-    Serial.println("Motion ended!");       // print test
-    pirState = LOW;                        // return pirState value to wait until next movement
-    myservo.write(posNoMotion);            // tell servo to go to position in variable 'pos'
-    delay(delayTime);                      // waits 15ms for the servo to reach the pos
+
+  if(digitalRead(pirPin) == LOW){      
+
+    if(takeLowTime){
+      lowIn = millis();             //save the time of the transition from HIGH to LOW
+      takeLowTime = false;    //make sure this is only done at the start of a LOW phase
+    }
+   
+    //if the sensor is low for more than the given pause,
+    //we can assume the motion has stopped
+    if(!lockLow && millis() - lowIn > pause){
+      //makes sure this block of code is only executed again after
+      //a new motion sequence has been detected
+      lockLow = true;                       
+      Serial.print("motion ended at "); //output
+      Serial.print((millis() - pause)/1000);
+      Serial.println(" sec");
+      delay(50);
+    }
   }
 }
-
